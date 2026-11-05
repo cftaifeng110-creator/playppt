@@ -31,9 +31,22 @@ jobs:
 
       - name: Build and package DMG
         working-directory: PresenterGuard
-        run: zsh Scripts/build_dmg.sh
+        run: |
+          set -o pipefail
+          xcodebuild -version | tee build-output.log
+          zsh Scripts/build_dmg.sh 2>&1 | tee -a build-output.log
+
+      - name: Upload build log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: PresenterGuard-build-log
+          path: PresenterGuard/build-output.log
+          if-no-files-found: warn
+          retention-days: 30
 
       - name: Upload DMG artifact
+        if: success()
         uses: actions/upload-artifact@v4
         with:
           name: PresenterGuard-DMG
