@@ -1,0 +1,42 @@
+name: Build DMG from uploaded ZIP
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main ]
+
+jobs:
+  build-dmg:
+    name: Build PresenterGuard DMG
+    runs-on: macos-14
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Verify uploaded project ZIP
+        run: |
+          set -euo pipefail
+          ls -lh "翻页助手_GitHub版工程.zip"
+          unzip -t "翻页助手_GitHub版工程.zip"
+
+      - name: Extract project
+        run: |
+          set -euo pipefail
+          rm -rf PresenterGuard
+          unzip -q "翻页助手_GitHub版工程.zip"
+          test -f PresenterGuard/PresenterGuard.xcodeproj/project.pbxproj
+          test -f PresenterGuard/Scripts/build_dmg.sh
+
+      - name: Build and package DMG
+        working-directory: PresenterGuard
+        run: zsh Scripts/build_dmg.sh
+
+      - name: Upload DMG artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: PresenterGuard-DMG
+          path: PresenterGuard/dist/*.dmg
+          if-no-files-found: error
+          retention-days: 30
